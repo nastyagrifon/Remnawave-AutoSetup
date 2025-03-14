@@ -1,7 +1,7 @@
 <div align="center">
   <h1 style="color: #00bcd4;">Remnawave Auto-Installer</h1>
   <p>Профессиональный скрипт для автоматической установки панели Remnawave и подключения узлов на Linux</p>
-  <img src="https://github.com/AsanFillter/Remnawave-AutoSetup/blob/52637e61cc545ce5b096ea3359758b4629451c96/remnawave_screenshot.png?raw=true" alt="Скриншот Remnawave" style="width: 80%; max-width: 800px; margin: 20px 0;">
+  <img src="https://github.com/AsanFillter/Remnawave-AutoSetup/blob/8ebe16c44b64d2e0e7a81c20613a625fad68805e/remnawave_screenshot.png?raw=true" alt="Скриншот Remnawave" style="width: 80%; max-width: 800px; margin: 20px 0;">
   
   <!-- Значки лицензии, версии и платформы -->
   <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
