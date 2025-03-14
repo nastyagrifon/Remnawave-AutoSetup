@@ -7,7 +7,7 @@ fi
 
 clear
 
-BOLD_BLUE=$(tput setaf 4)
+BOLD_PINK=$(tput setaf 5)
 BOLD_GREEN=$(tput setaf 2)
 LIGHT_GREEN=$(tput setaf 10)
 BOLD_BLUE_MENU=$(tput setaf 6)
@@ -40,7 +40,7 @@ check_internet() {
 }
 
 print_banner() {
-    echo -e "${BOLD_BLUE}"
+    echo -e "${BOLD_PINK}"
     echo "█████╗ ███████╗ █████╗ ███╗   ██╗    ███████╗██╗██╗     ██╗  ████████╗███████╗██████╗ "
     echo "██╔══██╗██╔════╝██╔══██╗████╗  ██║    ██╔════╝██║██║     ██║  ╚══██╔══╝██╔════╝██╔══██╗"
     echo "███████║███████╗███████║██╔██╗ ██║    █████╗  ██║██║     ██║     ██║   █████╗  ██████╔╝"
@@ -62,7 +62,7 @@ draw_info_box() {
     printf "│%-${width}s│\n" ""
     printf "│  • Server IP: ${ORANGE}%s${NC}${BOLD_GREEN}%-$(( width - 25 - ${#VIRTUAL_SERVER_IP} ))s│\n" "$VIRTUAL_SERVER_IP" ""
     printf "│  • Telegram: ${ORANGE}@AsanFillter${NC}${BOLD_GREEN}%-$(( width - 26 ))s│\n" ""
-    printf "│  • Version: ${ORANGE}V0.1 (Beta)${NC}${BOLD_GREEN}%-$(( width - 24 ))s│\n" ""
+    printf "│  • Version: ${ORANGE}V0.2 (Beta)${NC}${BOLD_GREEN}%-$(( width - 24 ))s│\n" ""
     printf "│%-${width}s│\n" ""
     printf "└%s┘\n" "$(printf '─%.0s' $(seq 1 $width))"
     echo -e "${NC}"
@@ -203,56 +203,9 @@ print(\"JWT_API_TOKENS_SECRET:\", jwt_api_tokens_secret)" > generate_jwt_secrets
         fi
     done
     
-    echo -ne "${PURPLE}Enter the domain for sub support (e.g., sub.domain.ir): ${NC}"
-    read SUB_SUPPORT_DOMAIN
-    echo
-    
-    echo -ne "${PURPLE}Enter the domain for the sub webpage (e.g., sub.domain.ir): ${NC}"
-    read SUB_WEBPAGE_DOMAIN
-    echo
-    
     echo -ne "${PURPLE}Enter the public domain for subscription (e.g., rw.domain.com): ${NC}"
     read SUB_PUBLIC_DOMAIN
     echo
-    
-    clear
-    echo -e "${BOLD_RED}\033[1m┌──────────────────────────────┐\033[0m${NC}"
-    echo -e "${BOLD_RED}\033[1m│ Ensure your credentials are strong │\033[0m${NC}"
-    echo -e "${BOLD_RED}\033[1m└──────────────────────────────┘\033[0m${NC}"
-    echo
-    
-    while true; do
-        echo -ne "${ORANGE}Please enter your SuperAdmin username: ${NC}"
-        read SUPERADMIN_USERNAME
-        echo
-        
-        while true; do
-            echo -ne "${ORANGE}Enter your SuperAdmin password: ${NC}"
-            stty -echo
-            read PASSWORD1
-            stty echo
-            echo
-            
-            echo -ne "${BOLD_RED}Re-enter your SuperAdmin password to confirm: ${NC}"
-            stty -echo
-            read PASSWORD2
-            stty echo
-            echo
-            
-            if [ "$PASSWORD1" = "$PASSWORD2" ]; then
-                SUPERADMIN_PASSWORD=$PASSWORD1
-                break
-            else
-                echo -e "${BOLD_RED}Passwords do not match. Please try again.${NC}"
-            fi
-        done
-        
-        echo -ne "${LIGHT_GREEN}Are you sure these are your username and password? (y/n): ${NC}"
-        read confirmation
-        if [ "$confirmation" = "y" ] || [ "$confirmation" = "Y" ]; then
-            break
-        fi
-    done
     
     clear
     (
@@ -261,11 +214,17 @@ print(\"JWT_API_TOKENS_SECRET:\", jwt_api_tokens_secret)" > generate_jwt_secrets
         sed -i "s|TELEGRAM_BOT_TOKEN=change_me|TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN|" .env
         sed -i "s|TELEGRAM_ADMIN_ID=change_me|TELEGRAM_ADMIN_ID=$TELEGRAM_ADMIN_ID|" .env
         sed -i "s|NODES_NOTIFY_CHAT_ID=change_me|NODES_NOTIFY_CHAT_ID=$NODES_NOTIFY_CHAT_ID|" .env
-        sed -i "s|SUB_SUPPORT_URL=https://support.example.com|SUB_SUPPORT_URL=https://$SUB_SUPPORT_DOMAIN|" .env
-        sed -i "s|SUB_WEBPAGE_URL=https://example.com|SUB_WEBPAGE_URL=https://$SUB_WEBPAGE_DOMAIN|" .env
         sed -i "s|SUB_PUBLIC_DOMAIN=example.com|SUB_PUBLIC_DOMAIN=$SUB_PUBLIC_DOMAIN|" .env
-        sed -i "s|SUPERADMIN_USERNAME=change_me|SUPERADMIN_USERNAME=$SUPERADMIN_USERNAME|" .env
-        sed -i "s|SUPERADMIN_PASSWORD=change_me|SUPERADMIN_PASSWORD=$SUPERADMIN_PASSWORD|" .env
+        sed -i '/SUB_SUPPORT_URL/d' .env
+        sed -i '/SUB_PROFILE_TITLE/d' .env
+        sed -i '/SUB_UPDATE_INTERVAL/d' .env
+        sed -i '/SUB_WEBPAGE_URL/d' .env
+        sed -i '/EXPIRED_USER_REMARKS/d' .env
+        sed -i '/DISABLED_USER_REMARKS/d' .env
+        sed -i '/LIMITED_USER_REMARKS/d' .env
+        sed -i '/SUPERADMIN_PASSWORD/d' .env
+        sed -i '/SUPERADMIN_USERNAME/d' .env
+        echo -e "\n### REDIS ###\nREDIS_HOST=remnawave-redis\nREDIS_PORT=6379" >> .env
     ) & show_setup_animation
     
     echo -e "${GREEN}The .env file has been successfully set up.${NC}"
@@ -309,6 +268,26 @@ services:
             - .env
         networks:
             - remnawave-network
+        depends_on:
+            remnawave-db:
+                condition: service_healthy
+            remnawave-redis:
+                condition: service_healthy
+
+    remnawave-redis:
+        image: valkey/valkey:8.0.2-alpine
+        container_name: remnawave-redis
+        hostname: remnawave-redis
+        restart: always
+        networks:
+            - remnawave-network
+        volumes:
+            - remnawave-redis-data:/data
+        healthcheck:
+            test: ['CMD', 'valkey-cli', 'ping']
+            interval: 3s
+            timeout: 10s
+            retries: 3
 
 networks:
     remnawave-network:
@@ -321,10 +300,13 @@ volumes:
         driver: local
         external: false
         name: remnawave-db-data
+    remnawave-redis-data:
+        driver: local
+        external: false
+        name: remnawave-redis-data
 EOF
     
-    docker compose up -d
-    docker compose logs -f -t > /tmp/docker_logs 2>&1 & LOGS_PID=$!
+    docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t > /tmp/docker_logs 2>&1 & LOGS_PID=$!
     sleep 1
     clear
     tail -f /tmp/docker_logs & TAIL_PID=$!
@@ -517,7 +499,139 @@ EOF
     cd ~
     clear
     print_banner
-    draw_info_box "Remnawave Panel" "Enhanced Setup v0.1"
+    draw_info_box "Remnawave Panel" "Enhanced Setup v0.2"
+}
+
+update_panel() {
+    clear
+    echo -e "${BOLD_PINK}Updating Remnawave Panel...${NC}"
+    sleep 1
+    cd ~/remnawave
+    cat > docker-compose.yml << 'EOF'
+services:
+    remnawave-db:
+        image: postgres:17
+        container_name: 'remnawave-db'
+        hostname: remnawave-db
+        restart: always
+        env_file:
+            - .env
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            - POSTGRES_DB=${POSTGRES_DB}
+            - TZ=UTC
+        ports:
+            - '127.0.0.1:6767:5432'
+        volumes:
+            - remnawave-db-data:/var/lib/postgresql/data
+        networks:
+            - remnawave-network
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+            interval: 3s
+            timeout: 10s
+            retries: 3
+
+    remnawave:
+        image: remnawave/backend:latest
+        container_name: 'remnawave'
+        hostname: remnawave
+        restart: always
+        ports:
+            - '127.0.0.1:3000:3000'
+        env_file:
+            - .env
+        networks:
+            - remnawave-network
+        depends_on:
+            remnawave-db:
+                condition: service_healthy
+            remnawave-redis:
+                condition: service_healthy
+
+    remnawave-redis:
+        image: valkey/valkey:8.0.2-alpine
+        container_name: remnawave-redis
+        hostname: remnawave-redis
+        restart: always
+        networks:
+            - remnawave-network
+        volumes:
+            - remnawave-redis-data:/data
+        healthcheck:
+            test: ['CMD', 'valkey-cli', 'ping']
+            interval: 3s
+            timeout: 10s
+            retries: 3
+
+networks:
+    remnawave-network:
+        name: remnawave-network
+        driver: bridge
+        external: false
+
+volumes:
+    remnawave-db-data:
+        driver: local
+        external: false
+        name: remnawave-db-data
+    remnawave-redis-data:
+        driver: local
+        external: false
+        name: remnawave-redis-data
+EOF
+    (
+        sed -i '/SUB_SUPPORT_URL/d' .env
+        sed -i '/SUB_PROFILE_TITLE/d' .env
+        sed -i '/SUB_UPDATE_INTERVAL/d' .env
+        sed -i '/SUB_WEBPAGE_URL/d' .env
+        sed -i '/EXPIRED_USER_REMARKS/d' .env
+        sed -i '/DISABLED_USER_REMARKS/d' .env
+        sed -i '/LIMITED_USER_REMARKS/d' .env
+        sed -i '/SUPERADMIN_PASSWORD/d' .env
+        sed -i '/SUPERADMIN_USERNAME/d' .env
+        echo -e "\n### REDIS ###\nREDIS_HOST=remnawave-redis\nREDIS_PORT=6379" >> .env
+    ) & show_setup_animation
+    
+    local message="Don't worry about the removed variables, they are moved to dashboard settings. Check out \"Subscription Settings\" section in dashboard.\nSuperadmin credentials now is stored in database and you will be prompted to create a superadmin account after updating."
+    for (( i=1; i<=5; i++ )); do
+        echo -ne "${BOLD_RED}${message}$(printf '.%.0s' $(seq 1 $i))\r"
+        sleep 0.5
+    done
+    echo -e "\n"
+    sleep 2
+    
+    docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t > /tmp/docker_logs 2>&1 & LOGS_PID=$!
+    sleep 1
+    clear
+    tail -f /tmp/docker_logs & TAIL_PID=$!
+    echo -e "${BOLD_RED}Press enter to continue ...${NC}"
+    read
+    kill $LOGS_PID $TAIL_PID 2>/dev/null
+    wait $LOGS_PID $TAIL_PID 2>/dev/null
+    rm -f /tmp/docker_logs
+    clear
+    print_banner
+    draw_info_box "Remnawave Panel" "Enhanced Setup v0.2"
+}
+
+update_node() {
+    clear
+    echo -e "${BOLD_PINK}Updating Remnawave Node...${NC}"
+    sleep 1
+    cd ~/remnanode && docker compose pull && docker compose down && docker compose up -d && docker compose logs -f -t > /tmp/docker_logs 2>&1 & LOGS_PID=$!
+    sleep 1
+    clear
+    tail -f /tmp/docker_logs & TAIL_PID=$!
+    echo -e "${BOLD_RED}Press enter to continue ...${NC}"
+    read
+    kill $LOGS_PID $TAIL_PID 2>/dev/null
+    wait $LOGS_PID $TAIL_PID 2>/dev/null
+    rm -f /tmp/docker_logs
+    clear
+    print_banner
+    draw_info_box "Remnawave Panel" "Enhanced Setup v0.2"
 }
 
 setup_node() {
@@ -639,7 +753,7 @@ setup_node() {
     
     clear
     print_banner
-    draw_info_box "Remnawave Panel" "Enhanced Setup v0.1"
+    draw_info_box "Remnawave Panel" "Enhanced Setup v0.2"
 }
 
 show_system_info() {
@@ -662,12 +776,39 @@ show_system_info() {
     read dummy_var
     clear
     print_banner
-    draw_info_box "Remnawave Panel" "Enhanced Setup v0.1"
+    draw_info_box "Remnawave Panel" "Enhanced Setup v0.2"
+}
+
+update_menu() {
+    clear
+    print_banner
+    draw_info_box "Update Menu" "Select what to update"
+    echo -e "${BOLD_PINK}1) Update Panel${NC}"
+    echo -e "${BOLD_PINK}2) Update Node${NC}"
+    echo -e "${BOLD_PINK}3) Back to Main Menu${NC}"
+    echo -en "${BOLD_RED}Please enter your choice [1-3]: ${NC}"
+    read choice
+    case $choice in
+        1)
+            update_panel
+            ;;
+        2)
+            update_node
+            ;;
+        3)
+            main
+            ;;
+        *)
+            echo -e "${BOLD_RED}Invalid choice, please try again.${NC}"
+            sleep 1
+            update_menu
+            ;;
+    esac
 }
 
 main() {
     print_banner
-    draw_info_box "Remnawave Panel" "Enhanced Setup v0.1"
+    draw_info_box "Remnawave Panel" "Enhanced Setup v0.2"
     
     while true; do
         echo ""
@@ -677,10 +818,12 @@ main() {
         echo ""
         animate_text " ${BOLD_BLUE_MENU}3) Display System Information${NC}" 0.02
         echo ""
-        animate_text " ${BOLD_RED}4) Exit${NC}" 0.02
+        animate_text " ${BOLD_PINK}4) Update${NC}" 0.02
+        echo ""
+        animate_text " ${BOLD_RED}5) Exit${NC}" 0.02
         
         echo -e "\n${BOLD_BLUE}───────────────────────────────────────────────${NC}"
-        echo -en "${BOLD_RED}Please enter your choice [1-4]: ${NC}"
+        echo -en "${BOLD_RED}Please enter your choice [1-5]: ${NC}"
         read choice
         
         case $choice in
@@ -694,13 +837,16 @@ main() {
                 show_system_info
                 ;;
             4)
+                update_menu
+                ;;
+            5)
                 exiting_animation
                 break
                 ;;
             *)
                 clear
                 print_banner
-                draw_info_box "Remnawave Panel" "Enhanced Setup v0.1"
+                draw_info_box "Remnawave Panel" "Enhanced Setup v0.2"
                 echo -e "${BOLD_RED}Invalid choice, please try again.${NC}"
                 sleep 1
                 ;;
