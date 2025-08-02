@@ -188,38 +188,51 @@ print(\"JWT_API_TOKENS_SECRET:\", jwt_api_tokens_secret)" > generate_jwt_secrets
         curl -o .env https://raw.githubusercontent.com/remnawave/backend/refs/heads/main/.env.sample
     ) & show_setup_animation
     
-    while true; do
-        echo -ne "${ORANGE}Enter your Telegram bot token: ${NC}"
-        read TELEGRAM_BOT_TOKEN
-        echo
-        if validate_telegram_token "$TELEGRAM_BOT_TOKEN"; then
-            break
-        else
-            echo -e "${BOLD_RED}Error: Invalid Telegram bot token format. It should look like '123456789:ABCdef...'.${NC}"
-        fi
-    done
+    local configure_telegram="n"
+    echo -ne "${ORANGE}Do you want to configure Telegram? (y/n): ${NC}"
+    read configure_telegram
+    echo
     
-    while true; do
-        echo -ne "${ORANGE}Enter your Telegram admin ID: ${NC}"
-        read TELEGRAM_ADMIN_ID
-        echo
-        if validate_numeric_id "$TELEGRAM_ADMIN_ID"; then
-            break
-        else
-            echo -e "${BOLD_RED}Error: Admin ID must be a numeric value.${NC}"
-        fi
-    done
-    
-    while true; do
-        echo -ne "${ORANGE}Enter the chat ID for notifications: ${NC}"
-        read NODES_NOTIFY_CHAT_ID
-        echo
-        if validate_numeric_id "$NODES_NOTIFY_CHAT_ID"; then
-            break
-        else
-            echo -e "${BOLD_RED}Error: Chat ID must be a numeric value.${NC}"
-        fi
-    done
+    if [[ "$configure_telegram" == "y" || "$configure_telegram" == "Y" ]]; then
+        while true; do
+            echo -ne "${ORANGE}Enter your Telegram bot token: ${NC}"
+            read TELEGRAM_BOT_TOKEN
+            echo
+            if validate_telegram_token "$TELEGRAM_BOT_TOKEN"; then
+                break
+            else
+                echo -e "${BOLD_RED}Error: Invalid Telegram bot token format. It should look like '123456789:ABCdef...'.${NC}"
+            fi
+        done
+        
+        while true; do
+            echo -ne "${ORANGE}Enter your Telegram admin ID: ${NC}"
+            read TELEGRAM_ADMIN_ID
+            echo
+            if validate_numeric_id "$TELEGRAM_ADMIN_ID"; then
+                break
+            else
+                echo -e "${BOLD_RED}Error: Admin ID must be a numeric value.${NC}"
+            fi
+        done
+        
+        while true; do
+            echo -ne "${ORANGE}Enter the chat ID for notifications: ${NC}"
+            read NODES_NOTIFY_CHAT_ID
+            echo
+            if validate_numeric_id "$NODES_NOTIFY_CHAT_ID"; then
+                break
+            else
+                echo -e "${BOLD_RED}Error: Chat ID must be a numeric value.${NC}"
+            fi
+        done
+    else
+        echo -e "${YELLOW}Skipping Telegram configuration.${NC}"
+        # Set default empty values or handle as needed
+        TELEGRAM_BOT_TOKEN=""
+        TELEGRAM_ADMIN_ID=""
+        NODES_NOTIFY_CHAT_ID=""
+    fi
     
     echo -ne "${PURPLE}Enter the public domain for subscription (e.g., rw.domain.com): ${NC}"
     read SUB_PUBLIC_DOMAIN
