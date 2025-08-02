@@ -138,17 +138,35 @@ install_panel() {
         return 1
     }
     
-    (
-        sudo apt update -y > /dev/null 2>&1
-        sudo apt install -y apt-transport-https ca-certificates curl software-properties-common > /dev/null 2>&1
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - > /dev/null 2>&1
-        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable" > /dev/null 2>&1
-        sudo apt update -y > /dev/null 2>&1
-        sudo apt install -y docker-ce > /dev/null 2>&1
-        docker --version > /dev/null 2>&1
-    ) & show_installing_animation
-    
-    wait $!
+    # Install Docker if not already installed
+    if ! command -v docker &> /dev/null; then
+        echo -e "${ORANGE}Docker not found. Installing Docker...${NC}"
+        (
+            sudo apt update -y > /dev/null 2>&1
+            sudo apt install -y apt-transport-https ca-certificates curl software-properties-common > /dev/null 2>&1
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - > /dev/null 2>&1
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable" > /dev/null 2>&1
+            sudo apt update -y > /dev/null 2>&1
+            sudo apt install -y docker-ce > /dev/null 2>&1
+            docker --version > /dev/null 2>&1
+        ) & show_installing_animation
+        wait $!
+    else
+        echo -e "${GREEN}Docker is already installed.${NC}"
+    fi
+
+    # Install Docker Compose if not already installed
+    if ! command -v docker-compose &> /dev/null; then
+        echo -e "${ORANGE}Docker Compose not found. Installing Docker Compose...${NC}"
+        (
+            sudo apt update -y > /dev/null 2>&1
+            sudo apt install -y docker-compose > /dev/null 2>&1
+            docker-compose --version > /dev/null 2>&1
+        ) & show_installing_animation
+        wait $!
+    else
+        echo -e "${GREEN}Docker Compose is already installed.${NC}"
+    fi
     
     clear
     echo -e "${GREEN}Packages installed successfully${NC}"
